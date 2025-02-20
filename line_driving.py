@@ -4,26 +4,21 @@ import time
 import cv2 as cv
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-import os
-import time
 import rospy
-import threading
 from time import sleep
 from sensor_msgs.msg import Joy
 from jetbotmini_msgs.msg import *
 from jetbotmini_msgs.srv import *
 from actionlib_msgs.msg import GoalID
 from jetbotmini import Robot
+import pyzbar.pyzbar as pyzbar
 
 global blue_lower
-global blue_upperv
-global show
+global blue_upper
 global mot_start
-
 
 blue_lower = np.array([100,43,46], dtype=np.uint8)
 blue_upper = np.array([124, 255, 255], dtype=np.uint8)
-show = 0
 mot_start = False
 
 def gstreamer_pipeline(
@@ -110,6 +105,22 @@ class JoyTeleop:
 
         return image, mask
 
+    def decodeDisplay(self, image):
+        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+        barcodes = pyzbar.decode(gray)
+        for barcode in barcodes:
+            (x, y, w, h) = barcode.rect
+            cv.rectangle(image, (x, y), (x + w, y + h), (225, 0, 0), 5)
+            encoding = 'UTF-8'
+            barcodeData = barcode.data.decode(encoding)
+            barcodeType = barcode.type
+            pilimg = Image.fromarray(image)
+            draw = ImageDraw.Draw(pilimg)
+            draw.text((x, y - 25), str(barcode.data, encoding), fill=(255, 0, 0))
+            image = cv.cvtColor(np.array(pilimg), cv.COLOR_RGB2BGR)
+            print("[INFO] Found {} barcode: {}".format(barcodeType, barcodeData))
+        return image
+
     def cancel_nav(self):
         now_time = time.time()
         if now_time - self.cancel_time > 1:
@@ -121,7 +132,7 @@ class JoyTeleop:
 if __name__ == '__main__':
     rospy.init_node('color_line')
     joy = JoyTeleop()
-    font_path = "../font/Block_Simplified.TTF"
+    font_path = "./font/Block_Simplified.TTF"
     capture = cv.VideoCapture(gstreamer_pipeline(flip_method=0), cv.CAP_GSTREAMER)
     cv_edition = cv.__version__
     if cv_edition[0] == '3': capture.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*'XVID'))
@@ -134,6 +145,7 @@ if __name__ == '__main__':
         ret, frame = capture.read()
         action = cv.waitKey(10) & 0xFF
         frame, binary = joy.colorDisplay(frame, font_path)
+        frame = joy.decodeDisplay(frame)
         end = time.time()
         fps = 1 / (end - start)
         text = "FPS : " + str(int(fps))
