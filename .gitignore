@@ -12,18 +12,10 @@ subscribe.html
 topic.html
 
 yolo-image.py
-<<<<<<< HEAD
-
-=======
-YOLO.py
->>>>>>> 2123bbc (line driving update)
 
 model/best.pt
 model/yolov8m.pt
 
 venv/
-<<<<<<< HEAD
-=======
 
 .DS_Store
->>>>>>> 2123bbc (line driving update)
