@@ -64,6 +64,7 @@ add_message_files(
 
 
 ## Generate services in the 'srv' folder
+# srv파일 추가
 add_service_files(
         FILES
         Buzzer.srv
