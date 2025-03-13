@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JetBot Controller</title>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/roslib"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/roslibjs/1.1.0/roslib.min.js"></script>
+</head>
+<body>
+    <h1>카메라 STREAMING</h1>
+    <img src="http://192.168.137.181:8080/stream?topic=/image">
+    <h4>QR 코드 데이터</h4>
+    <p id="qr-data">대기중...</p>
+    <h2>JetBot Mini Controller</h2>
+    <label>왼쪽 속도:</label>
+    <input type="number" id="leftSpeed" value="100">
+    <label>오른쪽 속도:</label>
+    <input type="number" id="rightSpeed" value="100">
+    <button onclick="setSpeed()">속도 설정</button>
+
+    <p id="response"></p>
+
+    <button onclick="sendCommand('on')">자율주행 시작</button>
+    <button onclick="sendCommand('off')">자율주행 정지</button>
+    
+    <button id="buzzertoggle">BUZZER</button>
+
+    <script>
+        // ROSBridge 연결
+        var ros = new ROSLIB.Ros({
+            url: 'ws://192.168.137.181:9090'  // ROSBridge WebSocket 주소
+        });
+
+        ros.on('connection', function() {
+            console.log('Connected to ROSBridge');
+        });
+
+        ros.on('error', function(error) {
+            console.log('Error connecting to ROSBridge: ', error);
+        });
+
+        ros.on('close', function() {
+            console.log('Connection to ROSBridge closed.');
+        });
+
+        // 서비스 클라이언트 생성
+        var setSpeedClient = new ROSLIB.Service({
+            ros: ros,
+            name: '/set_speed',
+            serviceType: 'jetbotmini_msgs/SetSpeed'
+        });
+
+        // 속도 설정 함수
+        function setSpeed() {
+            var leftSpeed = parseInt(document.getElementById("leftSpeed").value);
+            var rightSpeed = parseInt(document.getElementById("rightSpeed").value);
+
+            var request = new ROSLIB.ServiceRequest({
+                left_speed: leftSpeed,
+                right_speed: rightSpeed
+            });
+
+            setSpeedClient.callService(request, function(result) {
+                document.getElementById("response").innerText = result.message;
+            });
+        }
+
+        var keyControllClient = new ROSLIB.Service({
+            ros: ros,
+            name: '/key_controll',
+            serviceType: 'jetbotmini_msgs/keyControll'
+        })
+        
+        document.addEventListener("keydown", function(event){
+            let key = event.key.toLowerCase();
+            console.log(key)
+            if (['w', 'a', 's', 'd', 'q'].includes(key)){
+                let request = new ROSLIB.ServiceRequest({ keyval:key })
+                keyControllClient.callService(request, function(result){
+                    console.log("응답: " + result.success + ", 메세지: " + result.message)
+                })
+            }
+        })
+
+        var lineDrivingTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: "/start_auto",
+            serviceType: "std_msgs/String"
+        })
+        
+        function sendCommand(command) {
+            var message = new ROSLIB.Message({
+                data : command
+            })
+            
+            lineDrivingTopic.publish(message)
+            console.log("Sent command: " + command)
+        }
+        const buzzerService = new ROSLIB.Service({
+            ros : ros,
+            name : "/Buzzer",
+            serviceType : 'jetbotmini_msgs/Buzzer'
+        })
+
+        let buzzer_state = 0
+        function buzzerserviceFunc() {
+            buzzer_state ^= 1
+            
+            const request = new ROSLIB.ServiceRequest({
+                buzzer : buzzer_state
+            })
+
+            buzzerService.callService(request, (result) => {
+                console.log("Buzzer response:", result);
+            }, (error) => {
+                console.error("Buzzer service error:", error);
+            });
+        
+        document.getElementById("buzzertoggle").addEventListener("click", buzzerserviceFunc)
+        }
+        
+        var qrTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: "/data",
+            messageType: "std_msgs/String"
+        });
+
+        qrTopic.subscribe(function(message){
+            console.log("받은 QR 데이터:", message.data);
+            document.getElementById("qr-data").innerText = "QR Code: " + message.data;
+        });
+        
+    </script>
+</body>
+</html>
