@@ -1,0 +1,6 @@
+#request
+string keyval
+---
+#response
+bool success
+string message
