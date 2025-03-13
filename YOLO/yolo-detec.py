@@ -3,6 +3,7 @@ from ultralytics import YOLO
 
 cap = cv2.VideoCapture(0)
 
+# yolo version 8
 model = YOLO('model/fruit_six.pt')
 
 if not cap.isOpened():

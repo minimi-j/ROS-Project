@@ -8,6 +8,7 @@ ip = "192.168.137.131"
 stream = urlopen("http://" + ip + ":8080/stream?topic=/csi_cam_0/image_raw")
 buffer = b''
 
+# yolo version 8
 model = YOLO('model/best.pt')
 print("모델 불러오기 끝. 프로그램 시작!")
 
