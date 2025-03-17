@@ -1,5 +1,4 @@
 # Jetbot Mini
-![Alt text](materials/JetBot.jpeg)
 <img src="materials/JetBot.jpeg" alt="Jetbot Mini" style="max-width : 70%; height : auto;">
 
 이 젯봇 미니 프로젝트는 다음과 같은 기능이 있습니다.
@@ -17,16 +16,15 @@
 ## 기대효과
 도매시장뿐만 아니라 물류창고, 공장, 올리브영과 같은 다양한 물건이 존재하는 곳에서 물건의 위치를 찾아주고 재고관리에 도움을 줍니다.
 
-## 시연
-과일을 검출하고 신선도를 분류합니다.
-![Alt text](materials/yolo.jpeg)
+## Demonstration
+- 과일을 검출하고 신선도를 분류합니다.
 <img src="materials/yolo.jpeg" alt="yolo" style="max-width : 70%; height : auto;">
 
-QR코드를 보고 멈췄다 다시 갑니다.
+- QR코드를 보고 멈췄다 다시 갑니다.
 ![Jetbot Demo](materials/qr_check.gif)
 
-파란색 LED를 깜빡입니다.
-![Jetbot Demo](materials/led_blink.gif)
+- 파란색 LED를 깜빡입니다.
+<img src="materials/led_blink.gif" alt="Blink a LED" style="max-width : 50%; height : auto;">
 
 ## 사용방법
 하드웨어 요구사항
