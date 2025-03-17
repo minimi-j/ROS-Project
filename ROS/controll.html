@@ -25,6 +25,8 @@
     
     <button id="buzzertoggle">BUZZER</button>
 
+    <button id="ledtoggle">LED</button>
+
     <script>
         // ROSBridge 연결
         var ros = new ROSLIB.Ros({
@@ -120,6 +122,25 @@
         }
         document.getElementById("buzzertoggle").addEventListener("click", buzzerserviceFunc)
         
+        const ledService = new ROSLIB.Service({
+            ros : ros,
+            name : "/LEDBLUE",
+            serviceType : "jetbotmini_msgs/LEDBLUE"
+        })
+
+        let led_state = 0
+        function ledserviceFunc() {
+            led_state ^= 1
+
+            const request = new ROSLIB.ServiceRequest({
+                ledblue : led_state
+            })
+
+            ledService.callService(request, (result) => {
+                console.log("LED Response : ", result)
+            })
+        }
+        document.getElementById("ledtoggle").addEventListener("click", ledserviceFunc)
         
         var qrTopic = new ROSLIB.Topic({
             ros: ros,

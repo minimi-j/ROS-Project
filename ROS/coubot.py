@@ -21,6 +21,9 @@ STOP = 0
 DRIVE = 1
 LEFT = 2
 RIGHT = 3
+Led_B_pin = 23
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(Led_B_pin, GPIO.OUT, initial=GPIO.HIGH)
 
 bus = smbus.SMBus(1)
 ADDRESS = 0X1B
@@ -30,7 +33,6 @@ class Coubot:
     def __init__(self):
         rospy.on_shutdown(self.cancel)
         self.robot = Robot()
-        self.rate = rospy.Rate(5)
 
         self.state = STOP
         self.frame = None
@@ -39,6 +41,7 @@ class Coubot:
         self.img_subscriber = rospy.Subscriber("/image", Image, self.line_driving)
         self.auto = rospy.Subscriber("/start_auto", String, self.auto_cb)
         self.srv_Buzzer = rospy.Service("/Buzzer", Buzzer, self.buzzer) # catkin_ws/src/jetbotmini_msgs/srv/Buzzer.srv
+        self.srv_LEDBLUE = rospy.Service("/LEDBLUE", LEDBLUE, self.LEDBLUEcallback)
         self.srv_speed = rospy.Service("/set_speed", SetSpeed, self.handle_set_speed)
         self.srv_dir = rospy.Service("/key_Controll", KeyControll, self.move_bindings)
         self.qr_publisher = rospy.Publisher("/data", String, queue_size=10)
@@ -49,6 +52,7 @@ class Coubot:
 
     def cancel(self):
         self.img_subscriber.unregister()
+        self.srv_LEDBLUE.shutdown()
         GPIO.cleanup()
         rospy.loginfo("Close the robot...")
         rospy.sleep(1)
@@ -65,6 +69,20 @@ class Coubot:
     
     def setState(self, newState):
         self.state = newState
+    
+    def LEDBLUEcallback(self, request):
+        if not isinstance(request, LEDBLUERequest): return
+        if request.ledblue == 1:
+            for _ in range(10):
+                GPIO.output(Led_B_pin, GPIO.HIGH) # LED Off
+                sleep(0.5)
+                GPIO.output(Led_B_pin, GPIO.LOW) # LED On
+                sleep(0.5)
+        elif request.ledblue == 0:
+            GPIO.output(Led_B_pin, GPIO.HIGH) # LED Off
+        response = LEDBLUEResponse()
+        response.result = True
+        return response
 
     def buzzer(self, request):
         # i2c 방식으로 버저 신호 전송
@@ -82,48 +100,29 @@ class Coubot:
         self.robot.right_motor.value = 0
     
     def goLeft(self):
-        self.robot.left_motor.value = 0.2
+        self.robot.left_motor.value = 0.25
         self.robot.right_motor.value = 0.4
 
     def goRight(self):
         self.robot.left_motor.value = 0.4
-        self.robot.right_motor.value = 0.2
+        self.robot.right_motor.value = 0.25
 
     def decode(self):
         while True:
             if self.frame is not None:
-                self.rate.sleep()
                 gray = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-                gray = cv2.equalizeHist(gray)
-                gray = cv2.GaussianBlur(gray, (5,5), 0)
-                kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-                sharp = cv2.filter2D(gray, -1, kernel)
-                qrcodes = pyzbar.decode(sharp)
+                qrcodes = pyzbar.decode(gray)
                 for qrcode in qrcodes:
-                    encoding = 'UTF-8'
+                    encoding = "UTF-8"
                     self.qrData = qrcode.data.decode(encoding)
                     print("QRCODE DATA : {}".format(self.qrData))
                     if not rospy.is_shutdown():
                         self.qr_publisher.publish(self.qrData)
-                    if qrcode.polygon:
-                        pts = np.array(qrcode.polygon, dtype=np.float32)
-                        if len(pts) == 4:
-                            width = 640
-                            height = 480
-                            dst_pts = np.array([[0, 0], [width, 0], [width, height], [0, height]], dtype=np.float32)
-                            M = cv2.getPerspectiveTransform(pts, dst_pts)
-                            qr_warped = cv2.warpPerspective(gray, M, (width, height))
-                            
-                            new_qrcodes = pyzbar.decode(qr_warped)
-                            for new_qrcode in new_qrcodes:
-                                new_qrdata = new_qrcode.data.decode(encoding)
-                                self.qrData = new_qrdata
-                                if not rospy.is_shutdown():
-                                    self.qr_publisher.publish(self.qrData)
-                    sleep(1)
-
+                    sleep(0.1)
                     if self.qrData == "right":
-                        self.stop()
+                        self.setState(STOP)
+                        rospy.Timer(rospy.Duration(2), lambda _ : self.setState(DRIVE))
+                    elif self.qrData == "left":
                         self.setState(STOP)
                         rospy.Timer(rospy.Duration(2), lambda _ : self.setState(DRIVE))
 
