@@ -1,5 +1,6 @@
 # Jetbot Mini
 ![Alt text](materials/JetBot.jpeg)
+<img src="materials/JetBot.jpeg" alt="Jetbot Mini" style="max-width : 70%; height : auto;">
 
 이 젯봇 미니 프로젝트는 다음과 같은 기능이 있습니다.
 - 젯봇 미니 카메라로부터 실시간 영상을 스트리밍 합니다.
@@ -19,6 +20,13 @@
 ## 시연
 과일을 검출하고 신선도를 분류합니다.
 ![Alt text](materials/yolo.jpeg)
+<img src="materials/yolo.jpeg" alt="yolo" style="max-width : 70%; height : auto;">
+
+QR코드를 보고 멈췄다 다시 갑니다.
+![Jetbot Demo](materials/qr_check.gif)
+
+파란색 LED를 깜빡입니다.
+![Jetbot Demo](materials/led_blink.gif)
 
 ## 사용방법
 하드웨어 요구사항
