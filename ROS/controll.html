@@ -9,6 +9,8 @@
 <body>
     <h1>카메라 STREAMING</h1>
     <img src="http://192.168.137.181:8080/stream?topic=/image">
+    <h4>배터리 잔량</h4>
+    <p id="vol-data"></p>
     <h4>QR 코드 데이터</h4>
     <p id="qr-data">대기중...</p>
     <h2>JetBot Mini Controller</h2>
@@ -47,9 +49,9 @@
 
         // 서비스 클라이언트 생성
         var setSpeedClient = new ROSLIB.Service({
-            ros: ros,
-            name: '/set_speed',
-            serviceType: 'jetbotmini_msgs/SetSpeed'
+            ros : ros,
+            name : '/set_speed',
+            serviceType : 'jetbotmini_msgs/SetSpeed'
         });
 
         // 속도 설정 함수
@@ -60,8 +62,8 @@
             var rightSpeed = (rightSpeed * 255) / 100
 
             var request = new ROSLIB.ServiceRequest({
-                left_speed: leftSpeed,
-                right_speed: rightSpeed
+                left_speed : leftSpeed,
+                right_speed : rightSpeed
             });
 
             setSpeedClient.callService(request, function(result) {
@@ -70,9 +72,9 @@
         }
 
         var keyControllClient = new ROSLIB.Service({
-            ros: ros,
-            name: '/key_controll',
-            serviceType: 'jetbotmini_msgs/keyControll'
+            ros : ros,
+            name : '/key_controll',
+            serviceType : 'jetbotmini_msgs/keyControll'
         })
         
         document.addEventListener("keydown", function(event){
@@ -87,9 +89,9 @@
         })
 
         var lineDrivingTopic = new ROSLIB.Topic({
-            ros: ros,
-            name: "/start_auto",
-            serviceType: "std_msgs/String"
+            ros : ros,
+            name : "/start_auto",
+            serviceType : "std_msgs/String"
         })
         
         function sendCommand(command) {
@@ -143,15 +145,26 @@
         document.getElementById("ledtoggle").addEventListener("click", ledserviceFunc)
         
         var qrTopic = new ROSLIB.Topic({
-            ros: ros,
-            name: "/data",
-            messageType: "std_msgs/String"
+            ros : ros,
+            name : "/data",
+            messageType : "std_msgs/String"
         });
 
         qrTopic.subscribe(function(message){
             console.log("받은 QR 데이터:", message.data);
             document.getElementById("qr-data").innerText = "QR Code: " + message.data;
         });
+
+        var volTopic = new ROSLIB.Topic({
+            ros : ros,
+            name : "/voltage",
+            messageType : "jetbotmini_msgs/Battery"
+        });
+
+        volTopic.subscribe(function(message){
+            console.log("배터리 잔량: ", message.Voltage)
+            document.getElementById("vol-data").innerText = "배터리 잔량 : " + message.Voltage + "%";
+        })
         
     </script>
 </body>

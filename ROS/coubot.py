@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import cv2
+import math
 import rospy
 import smbus
 import threading
@@ -45,6 +46,7 @@ class Coubot:
         self.srv_speed = rospy.Service("/set_speed", SetSpeed, self.handle_set_speed)
         self.srv_dir = rospy.Service("/key_Controll", KeyControll, self.move_bindings)
         self.qr_publisher = rospy.Publisher("/data", String, queue_size=10)
+        self.volPublisher = rospy.Publisher("/voltage", Battery, queue_size=10)
 
         t1 = threading.Thread(target=self.decode)
         t1.daemon = True
@@ -53,6 +55,7 @@ class Coubot:
     def cancel(self):
         self.img_subscriber.unregister()
         self.srv_LEDBLUE.shutdown()
+        self.volPublisher.unregister()
         GPIO.cleanup()
         rospy.loginfo("Close the robot...")
         rospy.sleep(1)
@@ -69,6 +72,19 @@ class Coubot:
     
     def setState(self, newState):
         self.state = newState
+
+    def battery(self):
+        while not rospy.is_shutdown():
+            sleep(30)
+            AD_value = bus.read_i2c_block_data(ADDRESS,0x00,2)
+            # AD_value = [high_byte, low_byte]
+            # AD_value[0] << 8 : 상위 바이트를 왼쪽으로 8비트 시프트(곱하기 256)
+            # ex) 0x03 << 8 = 0x0300 = 768
+            voltage = ((AD_value[0] << 8) + AD_value[1]) * 13.3 / 1023.0
+            voltage = math.floor((voltage * 100) / 13)
+            battery = Battery()
+            battery.Voltage = voltage
+            self.volPublisher.publish(battery)
     
     def LEDBLUEcallback(self, request):
         if not isinstance(request, LEDBLUERequest): return
@@ -203,6 +219,7 @@ if __name__ == '__main__':
     rospy.init_node("video_check", anonymous=False)
     try:
         cb = Coubot()
+        cb.battery()
         rospy.spin()
     except Exception as e:
         rospy.loginfo("Error: ", e)
