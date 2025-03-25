@@ -55,7 +55,7 @@ roslaunch usb_cam usb_cam-test.launch
 rosrun web_video_server web_video_server
 
 # 6. 코드 실행
-rosrun coubot.py
+rosrun jetbot_ros coubot.py
 ```
 
 ## 버전 로그

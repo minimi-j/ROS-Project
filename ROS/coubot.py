@@ -84,7 +84,8 @@ class Coubot:
             voltage = math.floor((voltage * 100) / 13)
             battery = Battery()
             battery.Voltage = voltage
-            self.volPublisher.publish(battery)
+            if not rospy.is_shutdown():
+                self.volPublisher.publish(battery)
     
     def LEDBLUEcallback(self, request):
         if not isinstance(request, LEDBLUERequest): return
@@ -108,20 +109,20 @@ class Coubot:
         return response
 
     def goForward(self):
-        self.robot.left_motor.value = 0.4
-        self.robot.right_motor.value = 0.4
+        self.robot.left_motor.value = 0.55
+        self.robot.right_motor.value = 0.55
     
     def stop(self):
         self.robot.left_motor.value = 0
         self.robot.right_motor.value = 0
     
     def goLeft(self):
-        self.robot.left_motor.value = 0.25
-        self.robot.right_motor.value = 0.4
+        self.robot.left_motor.value = 0.4
+        self.robot.right_motor.value = 0.55
 
     def goRight(self):
-        self.robot.left_motor.value = 0.4
-        self.robot.right_motor.value = 0.25
+        self.robot.left_motor.value = 0.55
+        self.robot.right_motor.value = 0.4
 
     def decode(self):
         while True:
@@ -186,9 +187,9 @@ class Coubot:
                 cv2.circle(frame,(int(color_x),int(color_y)),int(color_radius),(255,0,255),2)   
                 center_x = frame.shape[1] // 2
                 if self.state != STOP:
-                    if center_x - color_x > 45 :
+                    if center_x - color_x > 30 :
                         self.setState(LEFT)
-                    elif center_x - color_x < -45 :
+                    elif center_x - color_x < -30 :
                         self.setState(RIGHT)
                     else:
                         self.setState(DRIVE)
